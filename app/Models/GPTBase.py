@@ -19,7 +19,7 @@ class GPTBase(ABC):
             top_p=topP,
             frequency_penalty=0,
             presence_penalty=0,
-            max_tokens=2048,
+            max_tokens=4096,
             messages=messages,
         )
         return response["choices"][0]["message"]["content"] # type: ignore
