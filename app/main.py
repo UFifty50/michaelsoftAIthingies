@@ -47,7 +47,7 @@ def main(argv: list[str]) -> int:
     print(calculationsNeeded, "\n\n\n\n")
     
     # TODO: do calculations
-    calculationAns: Dict[str, str] = {} # {"days": "167"}
+    calculationAns: Dict[str, str] =  {} #{"days": "167"}
     
     analysisReportPrompt: str = analysisReportGen.concat(prompt, docFileArr, dataNeeded, calculationAns)
     analysisReport: str = analysisReportGen.send(analysisReportPrompt)
@@ -62,21 +62,21 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    # import sys
-    # sys.exit(main(sys.argv))
-    app: FastAPI = FastAPI(lifespan=lifespan)
+    import sys
+    sys.exit(main(sys.argv))
+    # app: FastAPI = FastAPI(lifespan=lifespan)
     
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    # app.add_middleware(
+    #     CORSMiddleware,
+    #     allow_origins=["*"],
+    #     allow_credentials=True,
+    #     allow_methods=["*"],
+    #     allow_headers=["*"],
+    # )
 
-    @app.get("/")
-    async def root():
-        return {"message": "Hello World"}
+    # @app.get("/")
+    # async def root():
+    #     return {"message": "Hello World"}
     
     
 
