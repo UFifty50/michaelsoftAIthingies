@@ -1,0 +1,1 @@
+import { DockviewReact } from "dockview";
