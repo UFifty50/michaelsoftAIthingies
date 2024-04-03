@@ -1,8 +1,10 @@
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
+from pydantic import BaseModel
 from typing import Dict, List
 import defusedxml
+import uvicorn
 defusedxml.defuse_stdlib()
 
 # internal imports
@@ -22,6 +24,10 @@ calculationGen = CalculationsGPT.Calculations()
 analysisReportGen = AnalysisReportGPT.AnalysisReport()
 finalReportGen = FinalReportGPT.FinalReport()
 
+
+class PromptRequest(BaseModel):
+    prompt: str
+    
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -62,31 +68,51 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    import sys
-    sys.exit(main(sys.argv))
-    # app: FastAPI = FastAPI(lifespan=lifespan)
+    # import sys
+    # sys.exit(main(sys.argv))
+    app: FastAPI = FastAPI(lifespan=lifespan)
     
-    # app.add_middleware(
-    #     CORSMiddleware,
-    #     allow_origins=["*"],
-    #     allow_credentials=True,
-    #     allow_methods=["*"],
-    #     allow_headers=["*"],
-    # )
-
-    # @app.get("/")
-    # async def root():
-    #     return {"message": "Hello World"}
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000", "http://localhost:8000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        max_age=999,
+    )
     
+    fileStore: Dict[str, bytes] = {}
     
-
-# from .routers import users
-
-# app.include_router(users.router)
-
-# class Generator: 
-#     messageBlock: list[str]
-
-# @app.post("/api/v1/generator")
-# def feed_generator(generator: Generator):
-#     return {"message": "Generator received"}
+    # redirect to nodejs frontend
+    @app.get("/")
+    async def root():
+        return {"message": "Hello World"}
+    
+    @app.post("/api/v1/prompt")
+    async def prompt(prompt: PromptRequest):
+        return {"prompt": prompt.prompt, "files": list(fileStore.keys())}
+        
+    @app.post("/api/v1/upload")
+    async def uploadFile(files: List[UploadFile] = File(...)):
+         if len(files) == 0:
+             return {"error": "No files uploaded"}
+    
+         for idx, file in enumerate(files):
+             if file.filename is None:
+                 return {"error": f"No filename provided for file {idx}"}
+             fileStore[file.filename] = await file.read()
+    
+         return {"filenames": [file.filename for file in files]}
+    
+    @app.get("/api/v1/download/{filename}")
+    async def downloadFile(filename: str):
+        if filename not in fileStore:
+            return {"error": "File not found"}
+        
+        return fileStore[filename]
+    
+    @app.get("/viewFiles")
+    async def viewFiles():
+        return {"files": fileStore}
+    
+    uvicorn.run(app)

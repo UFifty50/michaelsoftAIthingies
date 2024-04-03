@@ -4,6 +4,7 @@ fastapi[all]==0.110
 xlrd
 openpyxl
 defusedxml
+overrides
 
 # sqlalchemy~=2.0.12
 # pydantic~=1.10.2
