@@ -34,11 +34,12 @@ class CsvDoc:
     title: str
     content: str
     
-    def __init__(self, title: str, content: io.BufferedReader):
+    def __init__(self, title: str, content: io.BufferedReader | str):
         self.title = title
         
-        contentBytes: bytes = content.read()
-        contents = openWorkbook(contentBytes)
-        self.content = xl2csv(contents)
+        if isinstance(content, io.BufferedReader):
+            self.content = xl2csv(openWorkbook(content.read()))
+        else:
+            self.content = content
         
         

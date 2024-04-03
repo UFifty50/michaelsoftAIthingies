@@ -35,7 +35,7 @@ const Chatbot = () => {
             .then(data => {
                 setMessages(prevMessages => ([
                     ...prevMessages,
-                    { text: data.prompt, sender: 'bot' }
+                    { text: data.final, sender: 'bot' }
                 ]));
             })
             .catch(error => {
@@ -59,7 +59,7 @@ const Chatbot = () => {
         selectedFiles.forEach((file, index) => {
             formData.append(`files`, file);
         });
-        
+
         fetch('http://localhost:8000/api/v1/upload', {
             method: 'POST',
             body: formData
@@ -99,8 +99,7 @@ const Chatbot = () => {
             <input type="button" value="Upload File" onClick={() => document.getElementById('selectFile')?.click()} className="upload-file" /> */}
             <button className="send-button" onClick={handleMessageSubmit}>Send</button>
             <div>
-                <input type="file" onChange={handleFileChange} multiple />
-                <button onClick={handleFileUpload}>Upload</button>
+                <input className="upload-file" type="file" accept="text/csv, application/vnd.ms-excel" multiple onChange={handleFileChange} />
                 <ul>
                     {fileList.map((fileName, index) => (
                         <li key={fileName + index}>{fileName}</li>
@@ -131,7 +130,7 @@ const components = {
     }
 };
 
-export const App: React.FC = (props: { theme?: string }) => {
+const App: React.FC = (props: { theme?: string }) => {
     const onReady = (event: DockviewReadyEvent) => {
         event.api.addPanel({
             id: "Data",

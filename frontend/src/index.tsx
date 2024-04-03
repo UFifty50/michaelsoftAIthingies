@@ -1,9 +1,8 @@
 import { StrictMode } from 'react';
 import * as ReactDOMClient from 'react-dom/client';
-import './styles.css';
+import './styles.scss';
 import 'dockview/dist/styles/dockview.css';
 
-import App from './app';
 import Container from './app';
 
 const rootElement = document.getElementById('root');

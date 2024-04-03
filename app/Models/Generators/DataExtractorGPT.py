@@ -1,5 +1,5 @@
 from overrides import override
-from typing import List
+from typing import List, Set
 
 # internal imports
 from ..GPTBase import GPTBase
@@ -13,7 +13,7 @@ class DataExtractor(GPTBase):
         self.prompt = Prompts.DATA_EXTRACTOR_PROMPT
         self.messages = [{"role": "system", "content": self.prompt}]
         
-    def concat(self, prompt: str, docArr: List[CsvDoc]) -> str:
+    def concat(self, prompt: str, docArr: List[CsvDoc] | Set[CsvDoc]) -> str:
         return prompt + '\n' + "\n\n".join([f"{doc.title}: {doc.content}" for doc in docArr])
     
     def send(self, prompt: str) -> str:

@@ -1,5 +1,5 @@
 from overrides import override
-from typing import List, Dict
+from typing import List, Dict, Set
 
 # internal imports
 from ..GPTBase import GPTBase
@@ -13,7 +13,7 @@ class AnalysisReport(GPTBase):
         self.prompt = Prompts.ANALYSIS_REPORT_PROMPT
         self.messages = [{"role": "system", "content": self.prompt}]
         
-    def concat(self, prompt: str, docArr: List[CsvDoc], dataNeeded: str, calculationAns: Dict[str, str]) -> str:
+    def concat(self, prompt: str, docArr: List[CsvDoc] | Set[CsvDoc], dataNeeded: str, calculationAns: Dict[str, str]) -> str:
         nl = "\n"
         return f"""Datasets: {f"{nl}{nl}".join([f"{doc.title}: {doc.content}" for doc in docArr])}
 
