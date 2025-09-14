@@ -1,8 +1,8 @@
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, File, UploadFile
-from pydantic import BaseModel
 from typing import Dict, List, Set
+from pydantic import BaseModel
 import defusedxml
 import uvicorn
 
@@ -45,47 +45,54 @@ async def lifespan(app: FastAPI):
         print("Shutdown")
 
 
-def main(argv: list[str]) -> int:
-    # TODO: take docs and prompt from UI or API
-    # TODO: convert all non-text files to CSV
-    docArr: List[str] = argv[1 : argv.index(":")]
-    prompt: str = " ".join(argv[argv.index(":") + 1 :])
+app: FastAPI = FastAPI(lifespan=lifespan)
 
-    docFileArr: List[CsvDoc] = [
-        CsvDoc(docArr[docArr.index(doc)], open(doc, "rb")) for doc in docArr
-    ]
 
-    dataNeededPrompt: str = dataExtractor.concat(prompt, docFileArr)
+# redirect to nodejs frontend
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+
+@app.post("/api/v1/prompt")
+async def prompt(prompt: PromptRequest):
+    # pass the prompt through the analysis pipeline with the docs
+    dataNeededPrompt: str = dataExtractor.concat(prompt.prompt, fileStore)
     dataNeeded: str = dataExtractor.send(dataNeededPrompt)
-
-    calculationsNeededPrompt: str = calculationGen.concat(prompt, dataNeeded)
+    calculationsNeededPrompt: str = calculationGen.concat(prompt.prompt, dataNeeded)
     calculationsNeeded: str = calculationGen.send(calculationsNeededPrompt)
     print(calculationsNeeded, "\n\n\n\n")
-
     # TODO: do calculations
     calculationAns: Dict[str, str] = {}  # {"days": "167"}
-
     analysisReportPrompt: str = analysisReportGen.concat(
-        prompt, docFileArr, dataNeeded, calculationAns
+        prompt.prompt, fileStore, dataNeeded, calculationAns
     )
     analysisReport: str = analysisReportGen.send(analysisReportPrompt)
-
     # prep final prompt
     finalReportPrompt: str = finalReportGen.concat(
-        prompt, docFileArr, dataNeeded, analysisReport
+        prompt.prompt, fileStore, dataNeeded, analysisReport
     )
     finalReport: str = finalReportGen.send(finalReportPrompt)
+    return {"final": finalReport}
 
-    print(analysisReportPrompt, "\n\n", finalReport)
 
-    return 0
+@app.post("/api/v1/upload")
+async def uploadFile(files: List[UploadFile] = File(...)):
+    if len(files) == 0:
+        return {"error": "No files uploaded"}
+    for idx, file in enumerate(files):
+        if file.filename is None:
+            return {"error": f"No filename provided for file {idx}"}
+        fileStore.add(CsvDoc(file.filename, await file.read()))
+    return {"filenames": [file.filename for file in files]}
+
+
+@app.get("/viewFiles")
+async def viewFiles():
+    return {"files": fileStore}
 
 
 if __name__ == "__main__":
-    # import sys
-    # sys.exit(main(sys.argv))
-    app: FastAPI = FastAPI(lifespan=lifespan)
-
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "http://localhost:8000"],
@@ -96,52 +103,5 @@ if __name__ == "__main__":
     )
 
     fileStore: Set[CsvDoc] = set()
-
-    # redirect to nodejs frontend
-    @app.get("/")
-    async def root():
-        return {"message": "Hello World"}
-
-    @app.post("/api/v1/prompt")
-    async def prompt(prompt: PromptRequest):
-        # pass the prompt through the analysis pipeline with the docs
-        dataNeededPrompt: str = dataExtractor.concat(prompt.prompt, fileStore)
-        dataNeeded: str = dataExtractor.send(dataNeededPrompt)
-
-        calculationsNeededPrompt: str = calculationGen.concat(prompt.prompt, dataNeeded)
-        calculationsNeeded: str = calculationGen.send(calculationsNeededPrompt)
-        print(calculationsNeeded, "\n\n\n\n")
-
-        # TODO: do calculations
-        calculationAns: Dict[str, str] = {}  # {"days": "167"}
-
-        analysisReportPrompt: str = analysisReportGen.concat(
-            prompt.prompt, fileStore, dataNeeded, calculationAns
-        )
-        analysisReport: str = analysisReportGen.send(analysisReportPrompt)
-
-        # prep final prompt
-        finalReportPrompt: str = finalReportGen.concat(
-            prompt.prompt, fileStore, dataNeeded, analysisReport
-        )
-        finalReport: str = finalReportGen.send(finalReportPrompt)
-
-        return {"final": finalReport}
-
-    @app.post("/api/v1/upload")
-    async def uploadFile(files: List[UploadFile] = File(...)):
-        if len(files) == 0:
-            return {"error": "No files uploaded"}
-
-        for idx, file in enumerate(files):
-            if file.filename is None:
-                return {"error": f"No filename provided for file {idx}"}
-            fileStore.add(CsvDoc(file.filename, await file.read()))
-
-        return {"filenames": [file.filename for file in files]}
-
-    @app.get("/viewFiles")
-    async def viewFiles():
-        return {"files": fileStore}
 
     uvicorn.run(app)

@@ -1,6 +1,7 @@
 import { DockviewReact, DockviewReadyEvent, IDockviewPanelProps } from "dockview";
 import { useEffect, useState } from "react";
 import * as React from "react";
+import { WebSocket } from "ws";
 import { Server, PromptResponse, FileUploadResponse } from "./server";
 
 
